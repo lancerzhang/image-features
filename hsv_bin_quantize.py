@@ -1,13 +1,14 @@
 import cv2
 import numpy as np
 
+
 def quantize(value, bins):
     """Quantize the value into one of the bins."""
     bin_size = 256 // bins
     return value // bin_size
 
 
-def extract_top_segments(image_path, num_bins=32, top_n=3, sv_threshold=64):
+def extract_top_segments(image_path, num_bins=16, top_n=3, sv_threshold=64):
     # Read the image
     image = cv2.imread(image_path)
     if image is None:
@@ -49,8 +50,9 @@ def extract_top_segments(image_path, num_bins=32, top_n=3, sv_threshold=64):
 
     return top_h_images, top_s_images, top_v_images
 
+
 # Example usage
-image_path = 'images/color_picker.png'  # Replace with your image path
+image_path = 'images/image_0107.jpg'  # Replace with your image path
 top_h_images, top_s_images, top_v_images = extract_top_segments(image_path)
 
 # Save or display the resulting images
