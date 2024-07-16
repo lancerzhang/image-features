@@ -2,13 +2,13 @@ import cv2
 import numpy as np
 
 
-def quantize(value, bins):
+def quantize(value, max_value, bins):
     """Quantize the value into one of the bins."""
-    bin_size = 256 // bins
+    bin_size = max_value // bins
     return value // bin_size
 
 
-def extract_top_segments(image_path, num_bins=16, top_n=3, sv_threshold=64):
+def extract_top_segments(image_path, num_bins=8, top_n=3, sv_threshold=64):
     # Read the image
     image = cv2.imread(image_path)
     if image is None:
@@ -23,9 +23,9 @@ def extract_top_segments(image_path, num_bins=16, top_n=3, sv_threshold=64):
     valid_mask = s_mask & v_mask
 
     # Quantize the HSV values into bins
-    h_quantized = quantize(hsv_image[:, :, 0], num_bins)
-    s_quantized = quantize(hsv_image[:, :, 1], num_bins)
-    v_quantized = quantize(hsv_image[:, :, 2], num_bins)
+    h_quantized = quantize(hsv_image[:, :, 0], 180, num_bins)
+    s_quantized = quantize(hsv_image[:, :, 1], 255, num_bins)
+    v_quantized = quantize(hsv_image[:, :, 2], 255, num_bins)
 
     # Function to find top N segments in a quantized channel
     def find_top_n_segments(quantized_channel, valid_mask):
@@ -52,7 +52,7 @@ def extract_top_segments(image_path, num_bins=16, top_n=3, sv_threshold=64):
 
 
 # Example usage
-image_path = 'images/image_0107.jpg'  # Replace with your image path
+image_path = 'images/color_picker.png'  # Replace with your image path
 top_h_images, top_s_images, top_v_images = extract_top_segments(image_path)
 
 # Save or display the resulting images
