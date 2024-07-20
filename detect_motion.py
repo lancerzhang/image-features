@@ -1,33 +1,74 @@
+import threading
 import time
 
 import cv2
 
 
-def main():
-    # 打开摄像头
-    cap = cv2.VideoCapture(0)
+class VideoCaptureAsync:
+    def __init__(self, src=0):
+        self.thread = None
+        self.src = src
+        self.cap = cv2.VideoCapture(self.src)
+        self.grabbed, self.frame = self.cap.read()
+        self.started = False
+        self.read_lock = threading.Lock()
 
-    # Assume you have 1080p camera, ensure it open with 1080p
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+    def start(self):
+        if self.started:
+            print('[!] Asynchronous video capturing is already started.')
+            return None
+        self.started = True
+        self.thread = threading.Thread(target=self.update, args=())
+        self.thread.start()
+        return self
+
+    def update(self):
+        while self.started:
+            grabbed, frame = self.cap.read()
+            with self.read_lock:
+                self.grabbed = grabbed
+                self.frame = frame
+
+    def read(self):
+        with self.read_lock:
+            frame = self.frame.copy()
+        return self.grabbed, frame
+
+    def stop(self):
+        self.started = False
+        self.thread.join()
+
+    def __exit__(self, exec_type, exc_value, traceback):
+        self.cap.release()
+
+
+def main():
+    # 使用异步视频捕获
+    cap = VideoCaptureAsync().start()
 
     # 获取摄像头的分辨率
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    width = int(cap.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
     # 初始化两个连续帧
     ret, frame1 = cap.read()
-    ret, frame2 = cap.read()
+
+    # 初始化缓存的模糊帧
+    blurred_frame1 = cv2.GaussianBlur(frame1, (11, 11), 0)
 
     # 初始化FPS计算
     fps = 0
     frame_counter = 0
     start_time = time.time()
 
-    while cap.isOpened():
-        # 对帧进行高斯模糊，模拟周边视觉的低分辨率特性
-        blurred_frame1 = cv2.GaussianBlur(frame1, (21, 21), 0)
-        blurred_frame2 = cv2.GaussianBlur(frame2, (21, 21), 0)
+    while True:
+        # 读取新帧
+        ret, frame2 = cap.read()
+        if not ret:
+            break
+
+        # 对新的帧进行高斯模糊处理
+        blurred_frame2 = cv2.GaussianBlur(frame2, (11, 11), 0)
 
         # 计算两个连续帧之间的差异
         diff = cv2.absdiff(blurred_frame1, blurred_frame2)
@@ -46,7 +87,7 @@ def main():
 
         # 在原始帧上绘制轮廓
         for contour in contours:
-            if cv2.contourArea(contour) < 500:
+            if cv2.contourArea(contour) < 1000:  # 调整最小轮廓面积以减少计算量
                 continue
             (x, y, w, h) = cv2.boundingRect(contour)
             cv2.rectangle(frame1, (x, y), (x + w, y + h), (0, 255, 0), 2)
@@ -66,15 +107,15 @@ def main():
         # 显示结果
         cv2.imshow('Motion Detection', frame1)
 
-        # 更新帧
+        # 更新缓存的模糊帧和原始帧
+        blurred_frame1 = blurred_frame2
         frame1 = frame2
-        ret, frame2 = cap.read()
 
         # 按q键退出
-        if cv2.waitKey(10) & 0xFF == ord('q'):
+        if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-    cap.release()
+    cap.stop()
     cv2.destroyAllWindows()
 
 
