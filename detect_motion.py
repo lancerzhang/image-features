@@ -1,10 +1,15 @@
-import cv2
 import time
+
+import cv2
 
 
 def main():
     # 打开摄像头
     cap = cv2.VideoCapture(0)
+
+    # Assume you have 1080p camera, ensure it open with 1080p
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
     # 获取摄像头的分辨率
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
