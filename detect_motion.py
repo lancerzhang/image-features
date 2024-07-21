@@ -15,15 +15,17 @@ class VideoCaptureAsync:
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
         self.grabbed, self.frame = self.cap.read()
+        if not self.grabbed:
+            print('[!] Failed to read from camera.')
         self.started = False
         self.read_lock = threading.Lock()
+        self.thread = threading.Thread(target=self.update, args=())
 
     def start(self):
         if self.started:
             print('[!] Asynchronous video capturing is already started.')
             return None
         self.started = True
-        self.thread = threading.Thread(target=self.update, args=())
         self.thread.start()
         return self
 
@@ -42,6 +44,7 @@ class VideoCaptureAsync:
     def stop(self):
         self.started = False
         self.thread.join()
+        self.cap.release()
 
     def __exit__(self, exec_type, exc_value, traceback):
         self.cap.release()
@@ -55,8 +58,10 @@ def main():
     width = int(cap.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-    # 初始化两个连续帧
     ret, frame1 = cap.read()
+    if not ret:
+        print('[!] Failed to read from camera.')
+        return
 
     # 初始化缓存的模糊帧
     blurred_frame1 = cv2.GaussianBlur(frame1, (11, 11), 0)
@@ -114,7 +119,7 @@ def main():
 
         # 更新缓存的模糊帧和原始帧
         blurred_frame1 = blurred_frame2
-        frame1 = frame2
+        frame1 = frame2.copy()
 
         # 按q键退出
         if cv2.waitKey(1) & 0xFF == ord('q'):
