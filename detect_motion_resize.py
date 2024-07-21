@@ -105,7 +105,7 @@ def main():
         # 显示分辨率和FPS
         frame_counter += 1
         elapsed_time = time.time() - start_time
-        if (elapsed_time > 1):
+        if elapsed_time > 1:
             fps = frame_counter / elapsed_time
             frame_counter = 0
             start_time = time.time()
