@@ -9,6 +9,11 @@ class VideoCaptureAsync:
         self.thread = None
         self.src = src
         self.cap = cv2.VideoCapture(self.src)
+
+        # Assume you have 1080p camera, ensure it open with 1080p
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+
         self.grabbed, self.frame = self.cap.read()
         self.started = False
         self.read_lock = threading.Lock()
