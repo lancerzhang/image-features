@@ -31,11 +31,19 @@ def main():
     frame_counter = 0
     start_time = time.time()
 
+    prev_frame = frame1.copy()
+
     while True:
         # 读取新帧
         ret, frame2 = cap.read()
         if not ret:
             break
+
+        # 确保读取到新帧
+        if (frame2 == prev_frame).all():
+            continue
+
+        prev_frame = frame2.copy()
 
         # 缩小图像
         small_frame2 = cv2.resize(frame2, (width // 2, height // 2))
