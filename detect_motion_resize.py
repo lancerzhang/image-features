@@ -1,64 +1,24 @@
-import threading
 import time
 
 import cv2
 
-
-class VideoCaptureAsync:
-    def __init__(self, src=0):
-        self.thread = None
-        self.src = src
-        self.cap = cv2.VideoCapture(self.src)
-
-        # Assume you have 1080p camera, ensure it open with 1080p
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-
-        self.grabbed, self.frame = self.cap.read()
-        if not self.grabbed:
-            print('[!] Failed to read from camera.')
-        self.started = False
-        self.read_lock = threading.Lock()
-        self.thread = threading.Thread(target=self.update, args=())
-
-    def start(self):
-        if self.started:
-            print('[!] Asynchronous video capturing is already started.')
-            return None
-        self.started = True
-        self.thread.start()
-        return self
-
-    def update(self):
-        while self.started:
-            grabbed, frame = self.cap.read()
-            with self.read_lock:
-                self.grabbed = grabbed
-                self.frame = frame
-
-    def read(self):
-        with self.read_lock:
-            frame = self.frame.copy()
-        return self.grabbed, frame
-
-    def stop(self):
-        self.started = False
-        self.thread.join()
-        self.cap.release()
-
-    def __exit__(self, exec_type, exc_value, traceback):
-        self.cap.release()
+from video_capture_async import VideoCaptureAsync
 
 
 def main():
     # 使用异步视频捕获
     cap = VideoCaptureAsync().start()
 
-    # 获取摄像头的分辨率
-    width = int(cap.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    # Assume you have 1080p camera, ensure it open with 1080p
+    # cap = cv2.VideoCapture(0)
+    # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
     ret, frame1 = cap.read()
+
+    width = frame1.shape[1]
+    height = frame1.shape[0]
+
     if not ret:
         print('[!] Failed to read from camera.')
         return
@@ -125,7 +85,7 @@ def main():
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-    cap.stop()
+    cap.release()
     cv2.destroyAllWindows()
 
 

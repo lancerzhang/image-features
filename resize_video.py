@@ -6,7 +6,7 @@ from video_processor import VideoProcessor
 
 
 def main():
-    scales = [2, 4, 8]
+    scales = [2, 4]
     video_processor = VideoProcessor(scales)
 
     video_processor.start()
@@ -26,7 +26,6 @@ def main():
             fps = frame_counter / elapsed_time
             frame_counter = 0
             start_time = time.time()
-
 
         if resized_frames:
             # Display the resized frames
