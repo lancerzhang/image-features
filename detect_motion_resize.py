@@ -9,11 +9,6 @@ def main():
     # 使用异步视频捕获
     cap = VideoCaptureAsync().start()
 
-    # Assume you have 1080p camera, ensure it open with 1080p
-    # cap = cv2.VideoCapture(0)
-    # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-    # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-
     ret, frame1 = cap.read()
 
     width = frame1.shape[1]
@@ -31,19 +26,12 @@ def main():
     frame_counter = 0
     start_time = time.time()
 
-    prev_frame = frame1.copy()
-
     while True:
         # 读取新帧
         ret, frame2 = cap.read()
+
         if not ret:
-            break
-
-        # 确保读取到新帧
-        if (frame2 == prev_frame).all():
             continue
-
-        prev_frame = frame2.copy()
 
         # 缩小图像
         small_frame2 = cv2.resize(frame2, (width // 2, height // 2))

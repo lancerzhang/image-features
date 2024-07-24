@@ -1,4 +1,5 @@
 import threading
+import time
 
 import cv2
 
@@ -34,11 +35,16 @@ class VideoCaptureAsync:
             with self.read_lock:
                 self.grabbed = grabbed
                 self.frame = frame
+            time.sleep(0.01)  # Add a sleep to reduce CPU usage
 
     def read(self):
-        with self.read_lock:
-            frame = self.frame.copy()
-        return self.grabbed, frame
+        if self.frame is None:
+            return None, None
+        else:
+            with self.read_lock:
+                frame = self.frame.copy()
+                self.frame = None  # 读取后清除缓冲区中的帧
+            return self.grabbed, frame
 
     def release(self):
         self.started = False
