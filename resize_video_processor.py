@@ -4,16 +4,24 @@ from queue import Queue
 
 import cv2
 
-from resizer import FrameResizer
+
+def resize_frame(frame, scale):
+    """
+    Resize the frame to the given scale.
+    """
+    height, width = frame.shape[:2]
+    new_dimensions = (int(width / scale), int(height / scale))
+    resized_frame = cv2.resize(frame, new_dimensions, interpolation=cv2.INTER_AREA)
+    return scale, resized_frame
 
 
-class VideoProcessor:
+class ResizeVideoProcessor:
     def __init__(self, scales):
+        self.scales = scales
         self.future = None
         self.executor = None
         self.queue = Queue()
         self.stop_event = threading.Event()
-        self.frame_resizer = FrameResizer(scales)
 
     def capture_and_process_video(self):
         # Open the camera (default camera index is 0)
@@ -34,8 +42,7 @@ class VideoProcessor:
                     break
 
                 # Submit tasks to resize the frame
-                futures = [executor.submit(self.frame_resizer.resize_frame, frame, scale) for scale in
-                           self.frame_resizer.scales]
+                futures = [executor.submit(resize_frame, frame, scale) for scale in self.scales]
 
                 # Collect the results and put them in the queue
                 resized_frames = []

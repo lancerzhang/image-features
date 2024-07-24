@@ -2,12 +2,12 @@ import time
 
 import cv2
 
-from video_processor import VideoProcessor
+from resize_video_processor import ResizeVideoProcessor
 
 
 def main():
     scales = [2, 4]
-    video_processor = VideoProcessor(scales)
+    video_processor = ResizeVideoProcessor(scales)
 
     video_processor.start()
 
