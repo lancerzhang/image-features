@@ -15,8 +15,10 @@ def process_frame(frame, scale, motion_scale, prev_frame_container):
 
     # Detect motion if the scale matches the motion_scale
     if scale == motion_scale:
+        print(f'prev_frame {prev_frame_container["prev_frame"]}')
         if prev_frame_container['prev_frame'] is not None:
             contours = detect_motion(prev_frame_container['prev_frame'], resized_frame)
+            print(f'found contours {motion_scale}')
         prev_frame_container['prev_frame'] = resized_frame
 
     return scale, resized_frame, contours
@@ -78,6 +80,7 @@ class VideoProcessor:
                 for future in as_completed(futures):
                     resized_frames.append(future.result())
 
+                resized_frames.append((1, frame, None))
                 self.queue.put(resized_frames)
 
         # Release the camera
