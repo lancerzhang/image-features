@@ -4,6 +4,7 @@ import cv2
 
 from video_capture_async import VideoCaptureAsync
 
+scale = 2
 
 def main():
     # 使用异步视频捕获
@@ -24,7 +25,7 @@ def main():
         return
 
     # 缩小图像
-    small_frame1 = cv2.resize(frame1, (width // 2, height // 2))
+    small_frame1 = cv2.resize(frame1, (width // scale, height // scale))
 
     # 初始化FPS计算
     fps = 0
@@ -39,7 +40,7 @@ def main():
             continue
 
         # 缩小图像
-        small_frame2 = cv2.resize(frame2, (width // 2, height // 2))
+        small_frame2 = cv2.resize(frame2, (width // scale, height // scale))
 
         # 计算两个连续帧之间的差异
         diff = cv2.absdiff(small_frame1, small_frame2)
@@ -61,7 +62,8 @@ def main():
             if cv2.contourArea(contour) < 1000:  # 调整最小轮廓面积以减少计算量
                 continue
             (x, y, w, h) = cv2.boundingRect(contour)
-            cv2.rectangle(frame1, (x * 2, y * 2), (x * 2 + w * 2, y * 2 + h * 2), (0, 255, 0), 2)
+            cv2.rectangle(frame1, (x * scale, y * scale), (x * scale + w * scale, y * scale + h * scale), (0, 255, 0),
+                          2)
 
         # 显示分辨率和FPS
         frame_counter += 1

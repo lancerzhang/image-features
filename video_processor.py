@@ -5,17 +5,40 @@ from queue import Queue
 import cv2
 
 
-def resize_frame(frame, scale):
+def process_frame(frame, scale, motion_scale):
     """
     Resize the frame to the given scale.
     """
     height, width = frame.shape[:2]
     new_dimensions = (int(width / scale), int(height / scale))
     resized_frame = cv2.resize(frame, new_dimensions, interpolation=cv2.INTER_AREA)
-    return scale, resized_frame
+    contours = None
+    # TODO, how to save and read prev_frame?
+    # if scale == motion_scale
+    #   contours = detect_motion(prev_frame, resized_frame), how to store and get prev_frame?
+    return scale, resized_frame, contours
 
 
-class ResizeVideoProcessor:
+def detect_motion(prev_frame, current_frame):
+    # 计算两个连续帧之间的差异
+    diff = cv2.absdiff(prev_frame, current_frame)
+
+    # 将差异图像转换为灰度图
+    gray_diff = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
+
+    # 应用阈值，获得二值化图像
+    _, thresh = cv2.threshold(gray_diff, 25, 255, cv2.THRESH_BINARY)
+
+    # 膨胀操作去除噪声
+    dilated = cv2.dilate(thresh, None, iterations=2)
+
+    # 寻找轮廓
+    contours, _ = cv2.findContours(dilated, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+    return contours
+
+
+class VideoProcessor:
     def __init__(self, scales):
         self.scales = scales
         self.future = None
@@ -42,7 +65,8 @@ class ResizeVideoProcessor:
                     break
 
                 # Submit tasks to resize the frame
-                futures = [executor.submit(resize_frame, frame, scale) for scale in self.scales]
+                # TODO, get motion_scale??
+                futures = [executor.submit(process_frame, frame, scale, motion_scale) for scale in self.scales]
 
                 # Collect the results and put them in the queue
                 resized_frames = []
@@ -69,3 +93,7 @@ class ResizeVideoProcessor:
         if not self.queue.empty():
             return self.queue.get()
         return None
+
+    def set_motion_scale(self, scale):
+        # TODO, set motion_scale for process_frame method
+        pass
