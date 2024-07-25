@@ -30,7 +30,7 @@ def resize_frame(frame):
     return resized_frame
 
 
-def process_frames_in_subprocess(frame, num_scales, motion_scale, prev_frame_container):
+def process_frames(frame, num_scales, motion_scale, prev_frame_container):
     resized_frames = []
     current_frame = frame
 
@@ -80,8 +80,8 @@ class VideoProcessor:
                     break
 
                 # Submit a single task to process all scales for the frame
-                future = process_executor.submit(process_frames_in_subprocess, frame, self.num_scales,
-                                                 self.motion_scale, self.prev_frame_container)
+                future = process_executor.submit(process_frames, frame, self.num_scales, self.motion_scale,
+                                                 self.prev_frame_container)
 
                 # Collect the results and put them in the queue
                 resized_frames = future.result()
