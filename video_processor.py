@@ -8,10 +8,7 @@ import cv2
 
 def detect_motion(prev_frame, current_frame):
     # Compute the difference between the two frames
-    diff = cv2.absdiff(prev_frame, current_frame)
-
-    # Convert the difference image to grayscale
-    gray_diff = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
+    gray_diff = cv2.absdiff(prev_frame, current_frame)
 
     # Apply threshold to get a binary image
     _, thresh = cv2.threshold(gray_diff, 25, 255, cv2.THRESH_BINARY)
@@ -36,9 +33,12 @@ def process_frame(frame, scale, motion_scale, prev_frame_container):
 
     # Detect motion if the scale matches the motion_scale
     if scale == motion_scale:
+
+        # Convert the difference image to grayscale
+        gray_frame = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2GRAY)
         if prev_frame_container['prev_frame'] is not None:
-            contours = detect_motion(prev_frame_container['prev_frame'], resized_frame)
-        prev_frame_container['prev_frame'] = resized_frame
+            contours = detect_motion(prev_frame_container['prev_frame'], gray_frame)
+        prev_frame_container['prev_frame'] = gray_frame
 
     return scale, resized_frame, contours
 
@@ -107,15 +107,3 @@ class VideoProcessor:
 
     def set_motion_scale(self, scale):
         self.motion_scale = scale
-
-
-# Example of detect_motion function
-def detect_motion(prev_frame, current_frame):
-    # Implement motion detection logic here
-    # For example, using frame differencing, thresholding, and contour detection
-    gray_prev = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
-    gray_current = cv2.cvtColor(current_frame, cv2.COLOR_BGR2GRAY)
-    frame_diff = cv2.absdiff(gray_prev, gray_current)
-    _, thresh = cv2.threshold(frame_diff, 25, 255, cv2.THRESH_BINARY)
-    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    return contours
