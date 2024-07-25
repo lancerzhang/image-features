@@ -22,24 +22,12 @@ def detect_motion(prev_frame, current_frame):
     return contours
 
 
-def process_frame(frame, is_detect_motion, prev_frame_container):
-    """
-    Resize the frame to the given scale.
-    """
+def resize_frame(frame):
     height, width = frame.shape[:2]
     new_dimensions = (int(width / 2), int(height / 2))
     resized_frame = cv2.resize(frame, new_dimensions, interpolation=cv2.INTER_AREA)
-    contours = None
 
-    # Detect motion if the scale matches the motion_scale
-    if is_detect_motion:
-        # Convert the difference image to grayscale
-        gray_frame = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2GRAY)
-        if prev_frame_container['prev_frame'] is not None:
-            contours = detect_motion(prev_frame_container['prev_frame'], gray_frame)
-        prev_frame_container['prev_frame'] = gray_frame
-
-    return resized_frame, contours
+    return resized_frame
 
 
 def process_frames_in_subprocess(frame, num_scales, motion_scale, prev_frame_container):
@@ -48,7 +36,15 @@ def process_frames_in_subprocess(frame, num_scales, motion_scale, prev_frame_con
 
     for i in range(1, num_scales + 1):
         scale = 2 ** i
-        current_frame, contours = process_frame(current_frame, motion_scale == scale, prev_frame_container)
+        current_frame = resize_frame(current_frame)
+
+        contours = None
+        if motion_scale == scale:
+            gray_frame = cv2.cvtColor(current_frame, cv2.COLOR_BGR2GRAY)
+            if prev_frame_container['prev_frame'] is not None:
+                contours = detect_motion(prev_frame_container['prev_frame'], gray_frame)
+            prev_frame_container['prev_frame'] = gray_frame
+
         resized_frames.append((scale, current_frame, contours))
 
     return resized_frames
