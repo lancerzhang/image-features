@@ -48,7 +48,7 @@ def main():
             if raw_frame is None or motion_contours is None:
                 continue
 
-                # 在原始帧上绘制轮廓
+            # 在原始帧上绘制轮廓
             for contour in motion_contours:
                 if cv2.contourArea(contour) < 1000:  # 调整最小轮廓面积以减少计算量
                     continue
@@ -66,6 +66,7 @@ def main():
         if cv2.waitKey(1) & 0xFF == ord('q'):
             video_processor.stop()
             break
+        time.sleep(0.01)  # 添加睡眠时间以减少CPU占用
 
     # Close all OpenCV windows
     cv2.destroyAllWindows()
