@@ -4,12 +4,12 @@ import cv2
 
 from video_processor import VideoProcessor
 
+num_scales = 3  # 3 = [2,4,8] scales
 motion_scale = 2
 
 
 def main():
-    scales = [2, 4]
-    video_processor = VideoProcessor(scales)
+    video_processor = VideoProcessor(num_scales)
 
     video_processor.start()
     video_processor.set_motion_scale(motion_scale)

@@ -1,5 +1,5 @@
 import time
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from multiprocessing import Manager
 from queue import Queue
 
@@ -22,30 +22,41 @@ def detect_motion(prev_frame, current_frame):
     return contours
 
 
-def process_frame(frame, scale, motion_scale, prev_frame_container):
+def process_frame(frame, is_detect_motion, prev_frame_container):
     """
     Resize the frame to the given scale.
     """
     height, width = frame.shape[:2]
-    new_dimensions = (int(width / scale), int(height / scale))
+    new_dimensions = (int(width / 2), int(height / 2))
     resized_frame = cv2.resize(frame, new_dimensions, interpolation=cv2.INTER_AREA)
     contours = None
 
     # Detect motion if the scale matches the motion_scale
-    if scale == motion_scale:
-
+    if is_detect_motion:
         # Convert the difference image to grayscale
         gray_frame = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2GRAY)
         if prev_frame_container['prev_frame'] is not None:
             contours = detect_motion(prev_frame_container['prev_frame'], gray_frame)
         prev_frame_container['prev_frame'] = gray_frame
 
-    return scale, resized_frame, contours
+    return resized_frame, contours
+
+
+def process_frames_in_subprocess(frame, num_scales, motion_scale, prev_frame_container):
+    resized_frames = []
+    current_frame = frame
+
+    for i in range(1, num_scales + 1):
+        scale = 2 ** i
+        current_frame, contours = process_frame(current_frame, motion_scale == scale, prev_frame_container)
+        resized_frames.append((scale, current_frame, contours))
+
+    return resized_frames
 
 
 class VideoProcessor:
-    def __init__(self, scales):
-        self.scales = scales
+    def __init__(self, num_scales):
+        self.num_scales = num_scales
         self.future = None
         self.thread_executor = None
         self.queue = Queue()
@@ -66,21 +77,18 @@ class VideoProcessor:
             print("Error: Could not open camera.")
             return
 
-        with ProcessPoolExecutor(max_workers=len(self.scales)) as process_executor:
+        with ProcessPoolExecutor(max_workers=self.num_scales) as process_executor:
             while self.is_running:
                 ret, frame = cap.read()
                 if not ret:
                     break
 
-                # Submit tasks to resize the frame
-                futures = [process_executor.submit(process_frame, frame, scale, self.motion_scale,
-                                                   self.prev_frame_container) for scale in self.scales]
+                # Submit a single task to process all scales for the frame
+                future = process_executor.submit(process_frames_in_subprocess, frame, self.num_scales,
+                                                 self.motion_scale, self.prev_frame_container)
 
                 # Collect the results and put them in the queue
-                resized_frames = []
-                for future in as_completed(futures):
-                    resized_frames.append(future.result())
-
+                resized_frames = future.result()
                 resized_frames.append((1, frame, None))
                 self.queue.put(resized_frames)
 
