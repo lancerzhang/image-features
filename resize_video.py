@@ -4,7 +4,10 @@ import cv2
 
 from video_processor import VideoProcessor
 
-num_scales = 3  # 3 = [2,4,8] scales
+# 3 = [2,4,8] scales
+num_scales = 3
+
+# scale = 2 can capture small change, scale = 3 can only capture large change
 motion_scale = 2
 
 
