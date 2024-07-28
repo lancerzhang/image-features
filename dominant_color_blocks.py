@@ -50,17 +50,32 @@ def create_color_mask(image, color, tolerance=10):
     return cv2.bitwise_or(mask1, mask2)
 
 
+def filter_largest_contours(mask, top_n=3):
+    # 查找轮廓
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # 根据面积排序并保留最大的前top_n个轮廓
+    contours = sorted(contours, key=cv2.contourArea, reverse=True)[:top_n]
+
+    # 创建一个新的掩码并绘制这些轮廓
+    largest_mask = np.zeros_like(mask)
+    cv2.drawContours(largest_mask, contours, -1, 255, thickness=cv2.FILLED)
+
+    return largest_mask
+
+
 # 加载图像
-image = cv2.imread('image.jpg')
+image = cv2.imread('your_image.jpg')
 
 # 找到主要颜色
-num_colors = 5
+num_colors = 3
 dominant_colors = find_dominant_colors(image, num_colors)
 
-# 提取每个主要颜色的色块
+# 提取每个主要颜色的色块并保留面积最大的前3个区域
 for i, color in enumerate(dominant_colors):
     mask = create_color_mask(image, color)
-    color_block = cv2.bitwise_and(image, image, mask=mask)
+    largest_mask = filter_largest_contours(mask, top_n=3)
+    color_block = cv2.bitwise_and(image, image, mask=largest_mask)
 
     cv2.imshow(f'Color Block {i + 1}', color_block)
     cv2.imwrite(f'color_block_{i + 1}.png', color_block)
